@@ -1,7 +1,17 @@
 # 📈 NiftyWatch
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://niftywatch.streamlit.app)
+
 **NiftyWatch** is a smart, customizable technical screener built with Python and Streamlit that analyzes **NIFTY 50 stocks** using key financial and technical indicators like **RSI**, **PE Ratio**, **ROE**, and **SMA**.
 It helps you visualize buy/sell signals, apply custom filters, and track performance — all in real time.
+
+---
+
+## 🚀 Live Demo
+
+🔗 [Click here to launch NiftyWatch](https://niftywatch.streamlit.app/)
+
+No setup required. Just open and start screening the NIFTY 50 interactively!
 
 ---
 
