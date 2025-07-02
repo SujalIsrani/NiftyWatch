@@ -4,6 +4,7 @@
 
 **NiftyWatch** is a smart, customizable technical screener built with Python and Streamlit that analyzes **NIFTY 50 stocks** using key financial and technical indicators like **RSI**, **PE Ratio**, **ROE**, and **SMA**.
 It helps you visualize buy/sell signals, apply custom filters, and track performance — all in real time.
+Fetches live NIFTY 50 tickers from NSE’s official index source using programmatic CSV ingestion (an alternative to web scraping)
 
 ---
 
