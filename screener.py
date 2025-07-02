@@ -131,51 +131,56 @@ def run_gui():
     tickers_df = pd.read_csv("tickers.csv")
     tickers = tickers_df['Ticker'].tolist()
 
-    # Sidebar
-    st.sidebar.title("🧾 Stock Selection")
+st.title("📊 NiftyWatch")
 
-    # Refresh ticker list from NSE
-    if st.sidebar.button("🔄 Refresh List from NSE"):
-        try:
-            df, fetched_time = fetch_nifty50_cached()
-            df.to_csv("tickers.csv", index=False)
-            st.sidebar.success("✅ List refreshed and saved.")
-            st.sidebar.caption(f"📅 Updated at: {fetched_time.strftime('%Y-%m-%d %H:%M:%S')}")
-        except Exception as e:
-            st.sidebar.error(f"❌ Failed to fetch: {e}")
+st.markdown("""
+A smart technical screener that analyzes NIFTY 50 stocks using RSI, PE, ROE, and SMA.  
+Customize filters and spot Buy/Sell signals in real-time with clean visual insights.
+""")
 
-    # Load tickers
-    tickers_df = pd.read_csv("tickers.csv")
-    tickers = tickers_df['Ticker'].tolist()
+# 🔄 Refresh ticker list button
+if st.button("🔄 Refresh Ticker List from NSE"):
+    try:
+        df, fetched_time = fetch_nifty50_cached()
+        df.to_csv("tickers.csv", index=False)
+        st.success("✅ List refreshed and saved.")
+        st.caption(f"📅 Updated at: {fetched_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    except Exception as e:
+        st.error(f"❌ Failed to fetch: {e}")
 
-    selected = st.sidebar.multiselect("Select stocks to analyze:", tickers, default=tickers[:5])
-    plot_selected = st.sidebar.multiselect("Select stocks to visualize:", selected)
-    run_button = st.sidebar.button("🚀 Run Screener")
-    if os.path.exists("tickers.csv"):
-        file_time = datetime.datetime.fromtimestamp(os.path.getmtime("tickers.csv"))
-        st.sidebar.caption(f"🕒 Last updated from file: {file_time.strftime('%Y-%m-%d %H:%M:%S')}")
+# 📥 Load tickers
+tickers_df = pd.read_csv("tickers.csv")
+tickers = tickers_df['Ticker'].tolist()
 
-    # Main content
-    st.title("📊 NiftyWatch")
-    st.markdown("""
-                A smart technical screener that analyzes NIFTY 50 stocks using RSI, PE, ROE, and SMA.  
-                Customize filters and spot Buy/Sell signals in real-time with clean visual insights.
-                """)
-    st.caption(f"Last list update: {file_time.strftime('%Y-%m-%d %H:%M:%S')}")
-    st.caption("Signal Logic: Buy when RSI < 30 and price crosses above 20-day SMA; Sell when RSI > 70 and price falls below 20-day SMA; else Hold.")
+if os.path.exists("tickers.csv"):
+    file_time = datetime.datetime.fromtimestamp(os.path.getmtime("tickers.csv"))
+    st.caption(f"🕒 Last updated from file: {file_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-    with st.expander("📊 Filter Criteria", expanded=True):
-        col1, col2 = st.columns(2)
-        with col1:
-            max_pe = st.slider("Max PE Ratio (Price-to-Earnings)", min_value=0, max_value=100, value=30)
-        with col2:
-            min_roe = st.slider("Min ROE (%) (Return on Equity)", min_value=0, max_value=100, value=15)
-        col3, col4 = st.columns(2)
-        with col3:
-            signal_filter = st.selectbox("Filter by Signal", options=["All", "Buy", "Sell", "Hold"], index=0)
-        with col4:
-            sort_by = st.selectbox("Sort results by", options=["None", "PE Ratio", "ROE (%)", "RSI"], index=0)
+# 🧾 Stock Selection
+st.subheader("🧾 Stock Selection")
 
+selected = st.multiselect("Select stocks to analyze:", tickers, default=tickers[:5])
+plot_selected = st.multiselect("Select stocks to visualize:", selected)
+
+# 📊 Filter Criteria
+with st.expander("📊 Filter Criteria", expanded=True):
+    col1, col2 = st.columns(2)
+    with col1:
+        max_pe = st.slider("Max PE Ratio (Price-to-Earnings)", min_value=0, max_value=100, value=30)
+    with col2:
+        min_roe = st.slider("Min ROE (%) (Return on Equity)", min_value=0, max_value=100, value=15)
+    
+    col3, col4 = st.columns(2)
+    with col3:
+        signal_filter = st.selectbox("Filter by Signal", options=["All", "Buy", "Sell", "Hold"], index=0)
+    with col4:
+        sort_by = st.selectbox("Sort results by", options=["None", "PE Ratio", "ROE (%)", "RSI"], index=0)
+
+    # ℹ️ Signal logic info
+    st.caption("📌 Signal Logic: Buy when RSI < 30 and price > 20-day SMA; Sell when RSI > 70 and price < 20-day SMA; otherwise Hold.")
+
+    # 🚀 Run Screener Button
+    run_button = st.button("🚀 Run Screener")
 
     if run_button:
         if not selected:
