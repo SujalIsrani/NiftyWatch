@@ -1,5 +1,18 @@
+# Ignore virtual environment
+venv/
+
+# Ignore Python cache
 __pycache__/
-*.pyc
+*.py[cod]
+
+# Ignore Jupyter/IPython history
+.ipynb_checkpoints/
+
+# Ignore data + Excel files
 *.xlsx
-screenshots/
 exports/
+screenshots/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
