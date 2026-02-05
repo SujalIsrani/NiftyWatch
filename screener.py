@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import time
 import argparse
 import streamlit as st
 import datetime
@@ -22,50 +23,57 @@ def calculate_rsi(series, window=14):
     return rsi
 
 # Screener logic
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_stock_bundle(ticker):
+    """
+    Cached per ticker for 1 hour
+    Prevents repeated Yahoo hits on Streamlit reruns
+    """
+    stock = yf.Ticker(ticker)
+    info = stock.info
+    hist = stock.history(period="6mo")
+    return info, hist
+
+
 def run_screener(selected_tickers, plot_tickers, max_pe_filter=30, min_roe_filter=15):
     summary_data = []
 
     for ticker in selected_tickers:
         try:
-            stock = yf.Ticker(ticker)
-            info = stock.info
+            info, data = fetch_stock_bundle(ticker)
 
-            pe = info.get('trailingPE')
-            roe = info.get('returnOnEquity')
+            pe = info.get("trailingPE")
+            roe = info.get("returnOnEquity")
 
-            if pe is None or roe is None:
+            if pe is None or roe is None or data.empty:
                 continue
+
+            # ⭐ Rate limit protection
+            time.sleep(1.1)
 
             roe_percent = round(roe * 100, 2)
 
-            data = stock.history(period='6mo')
-            if data.empty:
-                continue
-
+            # ===== Indicators =====
             data['RSI'] = calculate_rsi(data['Close'])
-            data['SMA20'] = data['Close'].rolling(window=20).mean()
-            volume_mean = data['Volume'].rolling(window=20).mean()
+            data['SMA20'] = data['Close'].rolling(20).mean()
+            volume_mean = data['Volume'].rolling(20).mean()
             data['Volume Spike'] = data['Volume'] > 1.5 * volume_mean
 
             last_row = data.iloc[-1]
+
             signal = "Hold"
             if last_row['RSI'] < 30 and last_row['Close'] > last_row['SMA20']:
                 signal = "Buy"
             elif last_row['RSI'] > 70 and last_row['Close'] < last_row['SMA20']:
                 signal = "Sell"
 
+            # ===== Charts =====
             if ticker in plot_tickers:
                 plt.figure(figsize=(10, 5))
-                plt.plot(data['Close'], label='Close Price')
-                plt.plot(data['SMA20'], label='20-day SMA', linestyle='--')
-                plt.title(f"{ticker} - Price vs SMA")
-                plt.xlabel("Date")
-                plt.ylabel("Price")
-                plt.legend()
-                plt.grid(True)
+                plt.plot(data['Close'])
+                plt.plot(data['SMA20'])
                 plt.tight_layout()
-                chart_path = f"screenshots/{ticker}_chart.png"
-                plt.savefig(chart_path)
+                plt.savefig(f"screenshots/{ticker}_chart.png")
                 plt.close()
 
             summary_data.append({
@@ -81,15 +89,27 @@ def run_screener(selected_tickers, plot_tickers, max_pe_filter=30, min_roe_filte
             print(f"Error processing {ticker}: {e}")
             continue
 
+    # ===== SAFE DATAFRAME CREATION =====
     result_df = pd.DataFrame(summary_data)
+
+    if result_df.empty:
+        return result_df, result_df   # ⭐ prevents crash
+
+    # Ensure required columns exist
+    for col in ['PE Ratio', 'ROE (%)']:
+        if col not in result_df.columns:
+            result_df[col] = np.nan
+
     filtered_df = result_df[
-    (result_df['PE Ratio'] <= max_pe_filter) &
-    (result_df['ROE (%)'] >= min_roe_filter)
+        (result_df['PE Ratio'] <= max_pe_filter) &
+        (result_df['ROE (%)'] >= min_roe_filter)
     ]
+
     result_df.to_excel("exports/all_results.xlsx", index=False)
     filtered_df.to_excel("exports/filtered_results.xlsx", index=False)
-    print("\n✅ Screener complete. Results saved.")
+
     return result_df, filtered_df
+
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_nifty50_cached():

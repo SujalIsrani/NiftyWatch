@@ -1,18 +1,18 @@
-# Ignore virtual environment
+# venv
 venv/
+.env/
 
-# Ignore Python cache
+# python cache
 __pycache__/
-*.py[cod]
+*.pyc
 
-# Ignore Jupyter/IPython history
-.ipynb_checkpoints/
+# streamlit
+.streamlit/
 
-# Ignore data + Excel files
-*.xlsx
+# outputs
 exports/
 screenshots/
 
-# Ignore system files
+# system
 .DS_Store
 Thumbs.db
